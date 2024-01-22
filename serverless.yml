@@ -1,0 +1,51 @@
+service: lambda-apm
+frameworkVersion: '3'
+
+custom:
+  secrets: ${file(secrets.json)}
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-southeast-1
+  layers:
+    - arn:aws:lambda:ap-southeast-1:267093732750:layer:elastic-apm-extension-ver-1-5-2-arm64:1
+    - arn:aws:lambda:ap-southeast-1:267093732750:layer:elastic-apm-node-ver-4-4-0:1
+  environment: 
+    NODE_ENV: ${self:custom.secrets.NODE_ENV}
+    DB_NAME: ${self:custom.secrets.DB_NAME}
+    DB_USER: ${self:custom.secrets.DB_USER}
+    DB_PASSWORD: ${self:custom.secrets.DB_PASSWORD}
+    DB_HOST: ${self:custom.secrets.DB_HOST}
+    DB_PORT: ${self:custom.secrets.DB_PORT}
+    NODE_OPTIONS: -r elastic-apm-node/start
+    ELASTIC_APM_LAMBDA_APM_SERVER: ${self:custom.secrets.APM_URL}
+    ELASTIC_APM_SECRET_TOKEN: ${self:custom.secrets.APM_TOKEN}
+    ELASTIC_APM_SEND_STRATEGY: 'background'
+    SERVICE_NAME: ${self:custom.secrets.SERVICE_NAME}
+
+functions:
+  health-check:
+    handler: index.healthCheck
+    architecture: arm64
+    events:
+      - http:
+          path: /
+          method: get
+  getUsers:
+    handler: index.getUsers
+    architecture: arm64
+    events:
+      - http:
+          path: /users
+          method: get
+  createUser:
+    handler: index.createUser
+    architecture: arm64
+    events:
+      - http:
+          path: /users
+          method: post
+
+plugins:
+  - serverless-offline
